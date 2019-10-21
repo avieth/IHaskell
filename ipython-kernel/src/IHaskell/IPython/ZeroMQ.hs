@@ -34,6 +34,8 @@ import           Text.Read (readMaybe)
 import           IHaskell.IPython.Message.Parser
 import           IHaskell.IPython.Types
 
+import Debug.Trace
+
 -- | The channel interface to the ZeroMQ sockets. All communication is done via Messages, which are
 -- encoded and decoded into a lower level form before being transmitted to IPython. These channels
 -- should functionally serve as high-level sockets which speak Messages instead of ByteStrings.
@@ -279,11 +281,13 @@ receiveMessage debug sock = do
   metadata <- next
   content <- next
 
-  when debug $ do
-    putStr "Header: "
-    Char.putStrLn headerData
-    putStr "Content: "
-    Char.putStrLn content
+  when debug $ traceM $ mconcat
+    [ "Header: "
+    , Char.unpack headerData
+    , "\n"
+    , Char.unpack content
+    , "\n"
+    ]
 
   return $ parseMessage idents headerData parentHeader metadata content
 
@@ -306,11 +310,13 @@ receiveMessage debug sock = do
 sendMessage :: Sender a => Bool -> ByteString -> Socket a -> Message -> IO ()
 sendMessage _ _ _ SendNothing = return ()
 sendMessage debug hmackey sock msg = do
-  when debug $ do
-    putStr "Message: "
-    print msg
-    putStr "Sent: "
-    print content
+  when debug $ traceM $ mconcat
+    [ "Message: "
+    , show msg
+    , "\nSend: "
+    , show content
+    , "\n"
+    ]
 
   -- Send all pieces of the message.
   mapM_ sendPiece idents
